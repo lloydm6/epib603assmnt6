@@ -1,0 +1,270 @@
+---
+title: "lab 6 2019 Q"
+author: "Iris Ganser and Marshall Lloyd"
+date: "Winter 2019"
+output:
+  html_document:
+    css: lab.css
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<div id="instructions">
+Complete this exercise, and submit answers using R Markdown in RStudio Oopen the document using RStudio, then **save as XXXXXXXXX.Rmd where XXXXXXXXX is your McGill student ID. Then when you knit the file it will create a html file called XXXXXXXXX.html**. You can then zip this file and submit it. Alternatively you can knit the file into a word or pdf document and submit those. The zip file approach is best for maintianing all the formating. Unfortuantely, as discussed in the announcements MyCourses won't accept a html file without altering its formating. Enter your answers in the appropriate R code chunks or text answers in the box following the **Type your answer here:**.   
+
+Grading is based on the points allocated for each question and an extra 5 points for overall style, organization, and clarity. Marks per question are indicated in each question. 
+
+</div>
+
+## Introduction
+
+There are often multiple studies addressing a specific medical question. Therefore it is essential to identify all studies that are germane to the research question. The systematic identification of studies can avoid a distorted representation of the available literature and is an essential first step before proceding with either a qualitative or quantitative data synthesis.
+
+Researchers, and increasingly the general public, are well aware that biases may influence the results of an individual study. For example, bias in the selection of study subjects may lead to individual study results that reflect not only the effect of any comparative intervention but also include the effect of differential subject selection. In an analagous manner when studying the totality of the available evidence, care must be taken to assure systematic identitification of all appropriate studies. Thus a systematic review is **always** an apppropriate initial step before any form of data synthesis. 
+
+This assignment assumes that the systematic review has been performed and it has been decided to proceed with a meta-analysis, a statistical combination of the individual study results. It is crucial to note that while a systematic review is always appropriate, a meta-analysis may or may not be appropriate depending on the study data. The conduct, or not, of a meta-analysis is often best decided by a team approach where both clinicians and methodologists are initimately involved. Presumably if the decision to perform a meta-analysis has been positively evaluated, there are enough similarities between the studies to merit their synthesis. Obviously combining apples and organges to produce fruit salads is unlikley to advance scientific knowledge.     
+
+This assignment will illustrate the mechanics of performing a meta-analysis using `R` and the `metafor` and `meta` packages. Within the meta-analysis framework, the essential elements are computing effect sizes, estimating study variances and aggregating the studies via different weigthing schemes depending on what underlying models have been assumed to be responsible for the data generation.  
+
+Effect sizes for meta-analyses are most frequently of two types: standardized mean difference (when the response or dependent variable assessed in the individual studies is measured on some quantitative scale), or odds ratio (or similar metric when the response or dependent variables are binary or dichotomous variables). Less common effect sizes may involve counts over time or correlations. The `metafor` package will do these calculations with the `escalc` (effect size calculation) function see `?metafor::escalc` for details.
+
+## Questions 1 - 10 points
+These data come from a Cochrane review meta-analysis comparing Nedocromil sodium with placebo for preventing exercise-induced bronchoconstriction (Cochrane Database Syst. Rev. (1) (2002)).    
+For each observation we have      
+• the author,    
+• the year of publication,      
+• Ne, the Number of patients (sample size) in the experimental treatment group,     
+• Me, the Mean response among the patients in the experimental group,     
+• Se, the Standard deviation of the response in the experimental group, and       
+• Nc, Mc and Sc the sample size, mean response and standard deviation in the
+control patients    
+
+The response variable is the maximum fall in the forced expiratory volume
+in 1 second (FEV1) over the course of follow-up, expressed as a percentage. For
+each study, mean value, standard deviation and sample size are reported for both
+experimental and control group. The mean difference is used as effect measure, i.e.
+mean value in Nedocromil sodium group minus mean value in placebo group. 
+
+<div id="exercise">
+**Exercise R code**:        
+A) Load the following packages `metafor`, `meta` (2 points)         
+B) Load the dataset `meta01.csv` from mycourses and assign it the object name `data1` (2 points)         
+C) What is the object class of `data1` & how many observations (rows) and variables columns) are there? (2 points)       
+D) Print the first 5 rows  (2 points)           
+E) What is the appropriate effect measure? (2 points) 
+
+
+</div>
+
+```{r}
+# enter R code here
+library(metafor)
+library(meta)
+library(dplyr)
+
+setwd("/Users/macbook/Documents/McGill School/EPIB 603/EPIB 603 Assignment 6")
+data1 <- read.csv("meta01.csv")
+
+str(data1)
+
+head(data1, 5)
+
+
+```
+
+<div id="body">
+**Type your answer here:** What is the appropriate effect measure?      
+
+c)data1 is a data frame. Year and author are factors, Ne and Nc are intigers, and Me, Se, Mc, and Sc are numeric. There are 17 rows (observations) and 8 columns (variables).
+
+d)
+
+e)The appropriate effect measure is the standardized mean difference in the maximum fall in the forced expiratory volume in 1 second (FEV1; Me - Mc). The studies are all using the same measure and scale, but they may vary in how they apply the measure.  (I initially said just the mean of mean differences because they are all using the same scale, buuuuuut I see the next question is asking for standardized mean difference)
+
+https://www.ncbi.nlm.nih.gov/pubmed/29397527
+
+
+</div>
+
+## Questions 2 - 8 points
+
+<div id="exercise">
+**Exercise R code**:      
+A) Use `escalc()`b to calculate the standardized mean differences for the `data1` and assign it the names `smd_meta`   (2 points)     
+B) Display the last 3 rows of `smd_meta`   (2 points)        
+C) Repeat these steps for the raw mean differences (4 points) 
+
+</div>
+
+```{r}
+# enter R code here
+
+?escalc
+
+smd_meta <- escalc(measure = "SMD", data = data1, m1i = Mc, m2i = Me, sd1i = Sc, sd2i = Se, n1i = Nc, n2i = Ne)
+
+tail(smd_meta, 3)
+
+md_meta <- escalc(measure = "MD", data = data1, m1i = Mc, m2i = Me, sd1i = Sc, sd2i = Se, n1i = Nc, n2i = Ne)
+
+tail(md_meta, 3)
+
+```
+
+## Questions 3 - 6 points
+
+You'll notice that, in addition to the baseline information we have two new variables: $y_i$ and $v_i$ which refer to the effect size and variance for each study respectively. $v_i$ serves 2 purposes; 1) it is important for computing the study weight, and 2) is required for generating confidence intervals around the overall effect size. Not surprisingly, we want to give more weight to larger studies as they have increased precision or decreased variance. Therefore a useful weighting scheme would involve the reciprocal of the study variance. While `metafor` automatically gives the study variance, it is helpful to understand how the calculation is performed.  
+
+For the non-standardized effect size, for study *i*, the estimated mean difference is
+$$\hat\mu_i  = \hat\mu_{ei} - \hat\mu_{ci}$$ 
+
+with variance estimator of 
+$$v_i =  \frac{s^2_{ei}}{n_{ei}} + \frac{s^2_{ci}}{n_{ci}}$$  
+
+For standardized mean difference, the variance for study *i* is computed as:
+$$ v_i = ((n1+n2)/(n1*n2)) + (y_i^2/(2*(n1+n2))) $$
+
+<div id="exercise">
+**Exercise R code**:      
+A) Calculate the variance for the standardized mean difference of the *i* studies using the above formula (3 points)      
+B) Display the author, year, your calculated variance and those variances calculated automatically for the first 3 studies. Round numbers to 4 decimals (3 points) 
+
+</div>
+
+```{r}
+# enter R code here
+
+smd_meta$smd.var <- round(((smd_meta$Nc + smd_meta$Ne) / (smd_meta$Nc * smd_meta$Ne)) + (smd_meta$yi^2 / (2* (smd_meta$Nc + smd_meta$Ne))), 4)
+
+head(select(smd_meta, author, year, vi, smd.var), 3)
+
+```
+
+## Questions 4 - 8 points
+Many useful meta-analytical functions for data and graphical analysis are available in the `meta`  library. The `metacont` function is very useful for continuous variables. Details can be found using `args(metacont)` or `help("metacont")`.  Output from the `metacont` function can be displayed as a forest plot using  `forest()`,  which provides an excellent visual summary of the data. This figure shows, for each study, the estimated mean difference and its 95% confidence interval. The area of the square centred on the estimated mean difference is proportional to the inverse of the variance of the study estimate resulting in a larger square for studies with more precise results, i.e. smaller variances. 
+
+<div id="exercise">
+**Exercise R code**:      
+A) Use the `metacont` function to create an R object called `meta`; include author & year as row identifiers (3 points)         
+B) Now we have `meta`, a list of 85 objects; display *$I^2$* (2 points)      
+C) Create a forest plot where the x axis is labelled "Maximum % fall in FEV1" (3 points) 
+
+</div>
+
+```{r}
+# enter R code here
+
+args(metacont)
+?metacont
+
+nrow(data1)
+85/17
+meta <- metacont(Ne, Me, Se, Nc, Mc, Sc, studlab = paste(author, year), data = data1)
+meta$I2
+str(meta)
+
+forest(meta, xlab = "Maximum % fall in FEV1")
+
+```
+
+## Questions 5 - 10 points
+
+Many times the effect measure is a binary outcome such as odds ratio, risk ratio, or risk difference. In practice,the odds ratio and risk ratio are typically used as they are on average more stable across studies than the risk difference.      
+We will use the `meta02.csv`, found on mycourses and which again comes from a Cochrane review where the risk ratio is measure of treatment effect for binary outcomes, complete response. The independent variable is  autologous stem cell transplantation (experimental arm) as part of first-line treatment with high-dose chemotherapy for adult patients with aggressive non-Hodgkin lymphoma. A fixed effect model is initially assumed.    
+Data format is       
+* Ee number of events in the experimental (i.e. active) treatment arm      
+* Ne number of patients in the experimental treatment arm      
+* Ec number of events in the control arm      
+* Nc number of patients in the control arm
+
+<div id="exercise">
+**Exercise R code**:      
+A) Read in the `meta02` data and assign it to a variable `data2` (2 points)     
+B) Calculate the experimental and control event probabilities using the `summary` function (2 points) 
+C) Use base R code to calculate the OR and its approximate 95% confidence interval for the "Milpied" trial, rounded to 4 decimels  (4 points) 
+D) Perform the same calculation for the the "Milpied" trial using the `metabin` with the summary measure `sm` = OR and `method="I"` (i.e. Inverse variance method) (2 points) 
+
+</div>
+
+```{r}
+# enter R code here
+data2 <- read.csv("meta02.csv")
+
+head(data2)
+
+str(data2)
+
+summary(c(data2$Ee/data2$Ne, data2$Ec/data2$Nc))
+
+summary(data2$Ee/data2$Ne)
+summary(data2$Ec/data2$Nc)
+
+Milpied <- filter(data2, study == "Milpied")
+Milpied
+
+
+
+Milpied.OR <- (Milpied[2]/Milpied[4]) / ((Milpied[3] - Milpied[2]) / (Milpied[5] - Milpied[4]))
+Milpied.OR
+
+#get CI via regression
+q5.data <- as.data.frame(cbind(id = 1:(99+98), exp = c(rep(1, 98), rep(0, 99)), outcome = c(rep(1, 74), rep(0, (98-74)), rep(1, 56), rep(0, (99-56)))))
+
+q5.glm <- glm(data = q5.data, outcome ~ exp, family = binomial)
+
+summary(q5.glm)
+
+exp(confint(q5.glm))
+
+#or do it "by hand"
+SE.log.OR <- sqrt((1/74) + (1/(98-74)) + (1/56) + (1/(99-56)))
+exp(log(as.numeric(Milpied.OR)) + c(-1, 1) * 1.96 * SE.log.OR)
+
+#use metabin
+metabin(data = Milpied, Ee, Ne, Ec, Nc, sm = "OR", method = "I")
+
+```
+
+For the fixed effect model there are three approaches to estimate the pooled
+treatment effect with binary data: inverse variance, Mantel–Haenszel and Peto
+method. While the inverse variance method can be used for all effect measures,
+the Mantel–Haenszel method is only suitable for the odds ratio, risk ratio and risk
+difference and the Peto method is specific for the odds ratio. The `metabin` function can handle all these variations.
+
+## Questions 6 - 10 points
+
+<div id="exercise">
+**Exercise R code**:      
+A) Using the `metabin` and `forest` functions plot the forest plot for the `data2` dataset assuming a fixed effect model. Identify the rows of the plot with the names from the study field variable. (4 points)     
+B) Using the `summary` compare the results between the fixed and random effects model (2 points)     
+C) Interpret the results from the 2 models and explain any differences (i.e. between a random effects and fixed effects model) (4 points) 
+
+</div>
+
+```{r}
+# enter R code here
+
+meta.q6 <- metabin(data = data2, Ee, Ne, Ec, Nc, sm = "OR", method = "I", studlab = study)
+
+forest(meta.q6)
+
+summary(meta.q6)
+
+
+```
+
+
+
+<div id="body">
+**Type your answer here:** Interpret the results from the 2 models and explain any differences      
+
+</div>
